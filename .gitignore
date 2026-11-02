@@ -1,7 +1,7 @@
 node_modules
 .next
-uploads
-backups
+/uploads
+/backups
 .env
 .env.local
 *.tsbuildinfo
