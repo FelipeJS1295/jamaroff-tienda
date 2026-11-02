@@ -1,0 +1,9 @@
+node_modules
+.next
+uploads
+backups
+.env
+.env.local
+*.tsbuildinfo
+npm-debug.log*
+deploy/respaldos

@@ -1,0 +1,48 @@
+# Jamaroff en tu computador (solo para probar).
+# Uso:  docker compose -f docker-compose.local.yml up --build
+# Luego abre http://localhost:3080  ·  admin: http://localhost:3080/admin
+# (si el 3080 también está ocupado, cambia el número en PUERTO, por ejemplo PUERTO=4000)
+#   usuario: admin@jamaroff.cl  ·  contraseña: admin-local-123
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: jamaroff
+      POSTGRES_PASSWORD: jamaroff
+      POSTGRES_DB: jamaroff
+    volumes:
+      - pgdata_local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jamaroff -d jamaroff"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build: .
+    ports:
+      - "${PUERTO:-3080}:3000"
+    environment:
+      SITE_URL: http://localhost:${PUERTO:-3080}
+      DATABASE_URL: postgres://jamaroff:jamaroff@db:5432/jamaroff
+      AUTH_SECRET: solo-para-pruebas-locales-0123456789abcdef
+      UPLOAD_DIR: /app/uploads
+      WEBPAY_ENV: integration
+      # Conexión con Cuadra (en Cuadra: dirección http://localhost:3080 y esta clave)
+      CUADRA_API_KEY: cuadra-local-123
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads_local:/app/uploads
+    # Migra, carga los productos de ejemplo (solo la primera vez), crea el admin y arranca
+    command: >
+      sh -c "npx tsx scripts/migrate.ts &&
+             npx tsx scripts/seed.ts &&
+             npx tsx scripts/create-admin.ts admin@jamaroff.cl 'Admin Jamaroff' admin-local-123 &&
+             npx next start -p 3000"
+
+volumes:
+  pgdata_local:
+  uploads_local:
