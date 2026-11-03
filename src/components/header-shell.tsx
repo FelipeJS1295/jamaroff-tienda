@@ -8,7 +8,7 @@ import { CartButton } from './cart-button';
 
 type Cat = { name: string; slug: string };
 
-export function HeaderShell({ categories, accountLabel }: { categories: Cat[]; accountLabel: string }) {
+export function HeaderShell({ categories, accountLabel, catalog = null }: { categories: Cat[]; accountLabel: string; catalog?: { slug: string; title: string } | null }) {
   const path = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -52,6 +52,7 @@ export function HeaderShell({ categories, accountLabel }: { categories: Cat[]; a
                 <Link href="/catalogo" className="sub-all">Ver toda la colección</Link>
               </div>
             </li>
+            {catalog ? <li className="nav-item"><Link className="nav-link" href={`/${catalog.slug}`}>{catalog.title}</Link></li> : null}
             <li className="nav-item"><Link className="nav-link" href="/a-medida" aria-current={current(path.startsWith('/a-medida'))}>A medida</Link></li>
             <li className="nav-item"><Link className="nav-link" href="/mayoristas" aria-current={current(path.startsWith('/mayoristas'))}>Mayoristas</Link></li>
             <li className="nav-item"><Link className="nav-link" href="/contacto" aria-current={current(path.startsWith('/contacto'))}>Contacto</Link></li>
@@ -89,6 +90,7 @@ export function HeaderShell({ categories, accountLabel }: { categories: Cat[]; a
         <ul className="m-main">
           <li><Link href="/catalogo">Colección</Link></li>
           {categories.map((c) => <li key={c.slug} className="m-sub"><Link href={`/catalogo/${c.slug}`}>{c.name}</Link></li>)}
+          {catalog ? <li><Link href={`/${catalog.slug}`}>{catalog.title}</Link></li> : null}
           <li><Link href="/a-medida">A medida</Link></li>
           <li><Link href="/mayoristas">Mayoristas</Link></li>
           <li><Link href="/contacto">Contacto</Link></li>

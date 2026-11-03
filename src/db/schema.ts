@@ -15,6 +15,7 @@ export const deliveryMethodEnum = pgEnum('delivery_method', ['despacho', 'retiro
 export const couponTypeEnum = pgEnum('coupon_type', ['percent', 'amount']);
 export const quoteKindEnum = pgEnum('quote_kind', ['medida', 'mayorista', 'contacto']);
 export const quoteStatusEnum = pgEnum('quote_status', ['nueva', 'respondida', 'cerrada']);
+export const catalogPageKindEnum = pgEnum('catalog_page_kind', ['portada', 'separador', 'producto', 'telas', 'texto']);
 
 // Un bulto embalado: medidas en cm y peso en kg
 export type PackageSpec = { largo: number; ancho: number; alto: number; peso: number };
@@ -251,3 +252,32 @@ export type OrderItem = typeof orderItems.$inferSelect;
 export type ShippingZone = typeof shippingZones.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Coupon = typeof coupons.$inferSelect;
+
+// ─── Catálogo digital (ej. /catalogo-2026): un libro que se arma en el admin ──
+export const catalogs = pgTable('catalogs', {
+  id: serial('id').primaryKey(),
+  /** Dirección pública: jamaroff.cl/{slug} (debe empezar con "catalogo-") */
+  slug: text('slug').notNull().unique(),
+  title: text('title').notNull(),
+  subtitle: text('subtitle'),
+  published: boolean('published').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const catalogPages = pgTable('catalog_pages', {
+  id: serial('id').primaryKey(),
+  catalogId: integer('catalog_id').notNull().references(() => catalogs.id, { onDelete: 'cascade' }),
+  position: integer('position').notNull().default(0),
+  kind: catalogPageKindEnum('kind').notNull(),
+  /** Solo en páginas de producto */
+  productId: integer('product_id').references(() => products.id, { onDelete: 'set null' }),
+  title: text('title'),
+  subtitle: text('subtitle'),
+  body: text('body'),
+  imageUrl: text('image_url'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('catalog_pages_catalog_idx').on(t.catalogId, t.position)]);
+
+export type Catalog = typeof catalogs.$inferSelect;
+export type CatalogPage = typeof catalogPages.$inferSelect;

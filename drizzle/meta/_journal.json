@@ -29,6 +29,13 @@
       "when": 1793502466176,
       "tag": "0003_luz_del_dia",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793652297183,
+      "tag": "0004_catalogo_digital",
+      "breakpoints": true
     }
   ]
 }

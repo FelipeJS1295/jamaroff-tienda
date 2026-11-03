@@ -8,6 +8,7 @@ const ITEMS = [
   { href: '/admin/pedidos', label: 'Pedidos', badge: 'pedidos' },
   { href: '/admin/productos', label: 'Productos' },
   { href: '/admin/categorias', label: 'Categorías' },
+  { href: '/admin/catalogos', label: 'Catálogos digitales' },
   { href: '/admin/mayoristas', label: 'Mayoristas', badge: 'mayoristas' },
   { href: '/admin/solicitudes', label: 'Cotizaciones y mensajes', badge: 'solicitudes' },
   { href: '/admin/despachos', label: 'Despachos y tarifas' },

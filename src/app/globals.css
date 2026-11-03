@@ -330,3 +330,27 @@ table.table { width: 100%; border-collapse: collapse; font-size: 15px; }
 .light-preview { aspect-ratio: 4 / 3; background: #EFE8DC; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; border: 1px dashed var(--line-strong); }
 .light-preview img { width: 100%; height: 100%; object-fit: cover; }
 .light-preview:has(img) { border-style: solid; }
+
+/* Admin › Catálogos digitales */
+.cat-pages { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cat-page { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; background: #fff; scroll-margin-top: 20px; }
+.cat-page:target { border-color: var(--sage); box-shadow: 0 0 0 2px #DCEADF; }
+.cat-page-row { display: flex; align-items: center; gap: 12px; }
+.cat-page-n { width: 26px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cat-page-thumb { width: 44px; height: 54px; flex: none; background: #EFE8DC; border-radius: 3px; overflow: hidden; }
+.cat-page-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cat-page-info { flex: 1; min-width: 0; }
+.cat-page details { margin-top: 8px; }
+.cat-page summary { cursor: pointer; color: var(--sage); }
+.cat-kinds { border: 0; padding: 0; margin: 0 0 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.cat-kind { display: flex; flex-direction: column; gap: 4px; padding: 12px; border: 1px solid var(--line-strong); border-radius: 6px; cursor: pointer; background: #fff; }
+.cat-kind input { margin: 0 0 4px; accent-color: var(--sage); }
+.cat-kind:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.cat-prods { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; max-height: 360px; overflow-y: auto; margin-top: 6px; padding: 2px; }
+.cat-prod { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font-size: 14px; background: #fff; }
+.cat-prod:has(input:checked) { border-color: var(--sage); background: #F1F7F2; }
+.cat-prod img, .cat-prod-ph { width: 38px; height: 46px; object-fit: cover; border-radius: 3px; background: #EFE8DC; flex: none; }
+/* Muestra solo los campos del tipo elegido */
+.cat-add .only-producto { display: none; }
+.cat-add:has(input[value='producto']:checked) .only-producto { display: block; }
+.cat-add:has(input[value='producto']:checked) .not-telas, .cat-add:has(input[value='telas']:checked) .not-telas label:not(:first-child):not(.full) { display: none; }
