@@ -9,7 +9,7 @@ import type { PackageSpec } from '@/db/schema';
 import {
   endSession, hashPassword, recordAttempt, requireAdmin, startSession, tooManyAttempts, verifyPassword,
 } from '@/lib/auth';
-import { changeOrderStatus } from '@/lib/orders';
+import { changeOrderStatus, deleteOrders } from '@/lib/orders';
 import { deleteUpload, saveProductImage } from '@/lib/uploads';
 import { slugify } from '@/lib/format';
 import { mailWholesaleDecision } from '@/lib/mail';
@@ -527,4 +527,14 @@ export async function saveSettingsAction(fd: FormData) {
     await db.insert(schema.settings).values({ key, value }).onConflictDoUpdate({ target: schema.settings.key, set: { value } });
   }
   go('/admin/ajustes', { ok: 'Ajustes guardados' });
+}
+
+// ─── Eliminar pedidos (compras de prueba, duplicados) ───────────────
+export async function deleteOrdersAction(fd: FormData) {
+  await requireAdmin();
+  const ids = fd.getAll('orderId').map((v) => Number(v)).filter((n) => Number.isInteger(n) && n > 0);
+  const back = str(fd, 'back') || '/admin/pedidos';
+  if (!ids.length) go(back, { error: 'Marca al menos un pedido para eliminar' });
+  const n = await deleteOrders(ids);
+  go(back.startsWith('/admin/pedidos/') ? '/admin/pedidos' : back, { ok: n === 1 ? 'Pedido eliminado' : `${n} pedidos eliminados` });
 }

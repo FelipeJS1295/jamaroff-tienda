@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation';
 import { asc, eq } from 'drizzle-orm';
 import { db, schema } from '@/db';
 import { clp, fechaHora, ORDER_STATUS_LABEL } from '@/lib/format';
-import { orderInfoAction, orderStatusAction } from '../../../actions';
+import { deleteOrdersAction, orderInfoAction, orderStatusAction } from '../../../actions';
 import { Flash } from '@/components/admin-flash';
+import { ConfirmButton } from '@/components/auto-submit';
 
 export const metadata = { title: 'Pedido' };
 
@@ -41,7 +42,16 @@ export default async function PedidoAdmin({ params, searchParams }: { params: Pr
           <h1>{order.number}</h1>
           <div className="small muted">{fechaHora(order.createdAt)} · <span className={`status st-${order.status}`}>{ORDER_STATUS_LABEL[order.status]}</span>{order.isWholesale ? <> · <span className="tag tag-yellow">Mayorista</span></> : null}</div>
         </div>
-        <a className="btn btn-outline btn-sm" href={`/pedido/${order.number}?t=${order.accessToken}`} target="_blank">Ver como cliente ↗</a>
+        <div className="row">
+          <a className="btn btn-outline btn-sm" href={`/pedido/${order.number}?t=${order.accessToken}`} target="_blank">Ver como cliente ↗</a>
+          <form action={deleteOrdersAction}>
+            <input type="hidden" name="orderId" value={order.id} />
+            <input type="hidden" name="back" value={`/admin/pedidos/${order.id}`} />
+            <ConfirmButton className="btn btn-outline btn-sm" message={`¿Eliminar el pedido ${order.number}? Se borra definitivamente, junto con sus pagos e historial. El stock que descontó vuelve a los productos.`}>
+              Eliminar pedido
+            </ConfirmButton>
+          </form>
+        </div>
       </div>
       <Flash ok={sp.ok} error={sp.error} />
 

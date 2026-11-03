@@ -3,6 +3,8 @@ import { and, desc, eq, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
 import { db, schema } from '@/db';
 import { clp, fecha, ORDER_STATUS_LABEL } from '@/lib/format';
 import { Flash } from '@/components/admin-flash';
+import { DeleteSelected, SelectAll } from '@/components/admin-select';
+import { deleteOrdersAction } from '../../actions';
 
 export const metadata = { title: 'Pedidos' };
 
@@ -11,7 +13,7 @@ const TABS: [string, string][] = [
   ['despachado', 'Despachados'], ['entregado', 'Entregados'], ['cancelado', 'Cancelados'],
 ];
 
-export default async function PedidosAdmin({ searchParams }: { searchParams: Promise<{ estado?: string; q?: string; tipo?: string; page?: string; ok?: string }> }) {
+export default async function PedidosAdmin({ searchParams }: { searchParams: Promise<{ estado?: string; q?: string; tipo?: string; page?: string; ok?: string; error?: string }> }) {
   const sp = await searchParams;
   const { orders } = schema;
   const estado = sp.estado ?? 'todos';
@@ -46,7 +48,7 @@ export default async function PedidosAdmin({ searchParams }: { searchParams: Pro
         <h1>Pedidos</h1>
         <a className="btn btn-outline btn-sm" href={`/admin/pedidos/exportar?${new URLSearchParams(Object.entries({ estado, q: sp.q ?? '', tipo: sp.tipo ?? '' }))}`}>Exportar Excel</a>
       </div>
-      <Flash ok={sp.ok} />
+      <Flash ok={sp.ok} error={sp.error} />
       <div className="pills">
         {TABS.map(([k, l]) => <Link key={k} className="pill" aria-current={estado === k ? 'true' : undefined} href={qs({ estado: k, page: undefined })}>{l} · {count(k)}</Link>)}
       </div>
@@ -56,15 +58,18 @@ export default async function PedidosAdmin({ searchParams }: { searchParams: Pro
         <input id="q" name="q" className="input" style={{ maxWidth: 320 }} placeholder="N°, nombre, correo o teléfono" defaultValue={sp.q} />
         <label className="check small"><input type="checkbox" name="tipo" value="mayorista" defaultChecked={sp.tipo === 'mayorista'} /> Solo mayoristas</label>
         <button className="btn btn-dark btn-sm" type="submit">Buscar</button>
+        <span style={{ marginLeft: 'auto' }}><DeleteSelected form="pedidos-sel" name="orderId" formAction={deleteOrdersAction} /></span>
       </form>
+      <form id="pedidos-sel"><input type="hidden" name="back" value={qs({ page: sp.page })} /></form>
       <div className="table-wrap box" style={{ padding: 0 }}>
         <table className="table" style={{ minWidth: 860 }}>
-          <thead><tr><th>Pedido</th><th>Cliente</th><th>Entrega</th><th>Productos</th><th>Total</th><th>Pago</th><th>Estado</th></tr></thead>
+          <thead><tr><th style={{ width: 36 }}><SelectAll form="pedidos-sel" name="orderId" label="Marcar todos los pedidos de esta página" /></th><th>Pedido</th><th>Cliente</th><th>Entrega</th><th>Productos</th><th>Total</th><th>Pago</th><th>Estado</th></tr></thead>
           <tbody>
             {rows.map((o) => {
               const it = items.find((i) => i.orderId === o.id);
               return (
                 <tr key={o.id}>
+                  <td><input type="checkbox" name="orderId" value={o.id} form="pedidos-sel" aria-label={`Marcar pedido ${o.number}`} /></td>
                   <td><Link href={`/admin/pedidos/${o.id}`} style={{ fontWeight: 500 }}>{o.number}</Link><div className="small muted">{fecha(o.createdAt)}</div></td>
                   <td>{o.name}{o.isWholesale ? <> <span className="tag tag-yellow">Mayorista</span></> : null}<div className="small muted">{o.email}</div></td>
                   <td className="small">{o.deliveryMethod === 'retiro' ? 'Retiro' : `${o.comuna}, ${o.region}`}{o.shippingToQuote ? <><br /><span className="tag tag-red">Despacho a cotizar</span></> : null}</td>
@@ -75,7 +80,7 @@ export default async function PedidosAdmin({ searchParams }: { searchParams: Pro
                 </tr>
               );
             })}
-            {!rows.length ? <tr><td colSpan={7} className="muted" style={{ padding: 24 }}>No hay pedidos con estos filtros.</td></tr> : null}
+            {!rows.length ? <tr><td colSpan={8} className="muted" style={{ padding: 24 }}>No hay pedidos con estos filtros.</td></tr> : null}
           </tbody>
         </table>
       </div>

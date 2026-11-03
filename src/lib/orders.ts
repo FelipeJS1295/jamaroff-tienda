@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, eq, gte, sql } from 'drizzle-orm';
+import { and, eq, gte, sql, inArray } from 'drizzle-orm';
 import { db, schema } from '@/db';
 import type { Order } from '@/db/schema';
 import { mailAdminNewOrder, mailOrderReceived, mailStatusChange } from './mail';
@@ -93,4 +93,25 @@ export async function changeOrderStatus(orderId: number, status: Order['status']
   await db.insert(schema.orderEvents).values({ orderId, status, note: opts.note ?? null });
   if (opts.notify !== false && status !== 'pagado' && status !== 'pendiente_pago') await mailStatusChange(after);
   return after;
+}
+
+/**
+ * Elimina pedidos definitivamente (ej. compras de prueba). Antes devuelve el stock que
+ * descontaron y el uso del cupón, si estaban pagados. Su detalle, historial y pagos se borran
+ * con el pedido (en la base están en cascada). No envía correos.
+ */
+export async function deleteOrders(ids: number[]) {
+  if (!ids.length) return 0;
+  const orders = await db.select().from(schema.orders).where(inArray(schema.orders.id, ids));
+  for (const o of orders) {
+    await restoreStock(o);
+    if (o.paymentStatus === 'pagado' && o.couponCode) {
+      await db
+        .update(schema.coupons)
+        .set({ used: sql`greatest(${schema.coupons.used} - 1, 0)` })
+        .where(eq(schema.coupons.code, o.couponCode));
+    }
+  }
+  await db.delete(schema.orders).where(inArray(schema.orders.id, orders.map((o) => o.id)));
+  return orders.length;
 }
