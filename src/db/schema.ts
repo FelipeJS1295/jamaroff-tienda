@@ -53,11 +53,14 @@ export const products = pgTable('products', {
   packages: jsonb('packages').$type<PackageSpec[]>().notNull().default([]),
   featured: boolean('featured').notNull().default(false),
   active: boolean('active').notNull().default(true),
+  // Variantes de color: productos con el mismo grupo son el mismo modelo en otro color
+  variantGroup: text('variant_group'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('products_category_idx').on(t.categoryId),
   index('products_active_idx').on(t.active),
+  index('products_variant_group_idx').on(t.variantGroup),
 ]);
 
 export const productImages = pgTable('product_images', {
@@ -82,12 +85,15 @@ export const productLightImages = pgTable('product_light_images', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex('product_light_images_product_hour_idx').on(t.productId, t.hour)]);
 
-// Telas / colores disponibles para un producto
+// Telas / colores disponibles para un producto (el muestrario)
 export const productVariants = pgTable('product_variants', {
   id: serial('id').primaryKey(),
   productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   hex: text('hex').notNull().default('#cccccc'),
+  // Muestrario: foto de la tela y su tipo (Felpa, Lino, Charleston…). "name" es el nombre del color.
+  fabric: text('fabric'),
+  imageUrl: text('image_url'),
   priceDelta: integer('price_delta').notNull().default(0),
   madeToOrderOnly: boolean('made_to_order_only').notNull().default(false),
   position: integer('position').notNull().default(0),

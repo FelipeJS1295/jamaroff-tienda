@@ -36,6 +36,13 @@
       "when": 1793652297183,
       "tag": "0004_catalogo_digital",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793810292261,
+      "tag": "0005_muestrario_variantes",
+      "breakpoints": true
     }
   ]
 }

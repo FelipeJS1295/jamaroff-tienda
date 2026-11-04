@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, ne, sql } from 'drizzle-orm';
 import { db, schema } from '@/db';
 import { deleteLightAction, deleteProductAction, duplicateProductAction, imageAction, productSlugAction, saveProductAction, uploadImagesAction, uploadLightAction } from '../../../actions';
 import { LIGHT_HOURS, LIGHT_LABEL, hourText } from '@/lib/light';
 import { ProductForm } from '../product-form';
+import { linkVariantAction, unlinkVariantAction } from '../../../fabric-actions';
 import { Flash } from '@/components/admin-flash';
 import { ConfirmButton } from '@/components/auto-submit';
 
@@ -23,6 +24,19 @@ export default async function EditarProducto({ params, searchParams }: { params:
     db.select().from(schema.productLightImages).where(eq(schema.productLightImages.productId, pid)),
   ]);
   const lightOf = (h: number) => lights.find((l) => l.hour === h);
+  // Variantes de color: los demás productos de su grupo, y los que se pueden agregar
+  const thumbSql = sql<string | null>`(select coalesce(i.thumb_url, i.url) from product_images i where i.product_id = "products"."id" order by i.position limit 1)`;
+  const [siblings, others] = await Promise.all([
+    p.variantGroup
+      ? db
+          .select({ id: schema.products.id, name: schema.products.name, color: schema.products.color, active: schema.products.active, thumb: thumbSql })
+          .from(schema.products)
+          .where(and(eq(schema.products.variantGroup, p.variantGroup), ne(schema.products.id, p.id)))
+          .orderBy(asc(schema.products.name))
+      : Promise.resolve([]),
+    db.select({ id: schema.products.id, name: schema.products.name, group: schema.products.variantGroup }).from(schema.products).where(ne(schema.products.id, p.id)).orderBy(asc(schema.products.name)),
+  ]);
+  const linkable = others.filter((o) => !p.variantGroup || o.group !== p.variantGroup);
 
   return (
     <>
@@ -83,6 +97,43 @@ export default async function EditarProducto({ params, searchParams }: { params:
             })}
           </div>
           <button className="btn btn-dark btn-sm" type="submit" style={{ marginTop: 14 }}>Guardar fotos de luz</button>
+        </form>
+      </section>
+
+      <section className="box" id="variantes" style={{ marginBottom: 20 }}>
+        <h2>Variantes de color <span className="small muted" style={{ fontWeight: 400 }}>· el mismo producto en otro color</span></h2>
+        <p className="small muted" style={{ marginTop: 0 }}>
+          Une aquí los productos que son este mismo modelo en otro color. Quedan unidos entre todos: en el catálogo digital, al abrir las fotos de
+          cualquiera de ellos, el cliente ve los demás colores y puede pasar de uno a otro. Para que se vea bien el nombre de cada variante, completa el campo
+          “Color” de cada producto.
+        </p>
+        {siblings.length ? (
+          <ul className="variant-list" style={{ listStyle: 'none', padding: 0 }}>
+            {siblings.map((v) => (
+              <li key={v.id}>
+                {v.thumb ? <img src={v.thumb} alt="" /> : <span className="fab-noimg" />}
+                <span style={{ flex: 1 }}>
+                  <Link href={`/admin/productos/${v.id}`}>{v.name}</Link>
+                  <span className="small muted"> · {v.color || 'sin color cargado'}{!v.active ? ' · oculto en la tienda' : ''}</span>
+                </span>
+                <form action={unlinkVariantAction}>
+                  <input type="hidden" name="productId" value={p.id} />
+                  <ConfirmButton className="mini-btn danger" name="otherId" value={String(v.id)} message={`¿Quitar ${v.name} de las variantes?`}>Quitar</ConfirmButton>
+                </form>
+              </li>
+            ))}
+          </ul>
+        ) : <p className="alert alert-info small">Este producto aún no tiene variantes de color.</p>}
+        <form action={linkVariantAction} className="row">
+          <input type="hidden" name="productId" value={p.id} />
+          <label className="field" style={{ flex: '1 1 260px' }}>
+            <span>Agregar variante</span>
+            <select className="select" name="otherId" required defaultValue="">
+              <option value="" disabled>Elige el producto en otro color…</option>
+              {linkable.map((o) => <option key={o.id} value={o.id}>{o.name}{o.group ? ' (ya tiene variantes: se unen todas)' : ''}</option>)}
+            </select>
+          </label>
+          <button className="btn btn-dark btn-sm" type="submit">Agregar</button>
         </form>
       </section>
 

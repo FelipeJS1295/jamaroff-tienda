@@ -92,7 +92,10 @@ export function ProductForm({ data, categories, action }: { data: ProductFormDat
 
         <section className="box">
           <h2>Telas / colores</h2>
-          <p className="small muted" style={{ marginTop: 0 }}>Las marcadas “solo a pedido” no se ofrecen para compra en stock.</p>
+          <p className="small muted" style={{ marginTop: 0 }}>
+            Las marcadas “solo a pedido” no se ofrecen para compra en stock.
+            {data.id ? <> La foto y el tipo de cada tela se cargan en el <a href={`/admin/muestrario?producto=${data.id}`}>Muestrario de telas</a>.</> : null}
+          </p>
           <div className="rows-editor">
             {variants.map((v, i) => (
               <div className="r" key={i}>

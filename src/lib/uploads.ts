@@ -35,3 +35,21 @@ export async function deleteUpload(url: string | null | undefined) {
   if (!full.startsWith(UPLOAD_DIR)) return;
   await unlink(full).catch(() => {});
 }
+
+/**
+ * Foto de una tela para el muestrario: cuadrada (600 px, centro de la foto) y su color promedio,
+ * que se usa donde no cabe la foto (o si no carga).
+ */
+export async function saveSwatchImage(file: File) {
+  if (!OK_TYPES.includes(file.type)) throw new Error('Formato no soportado. Usa JPG, PNG o WebP.');
+  if (file.size > MAX_BYTES) throw new Error('La foto supera los 15 MB.');
+  const buf = Buffer.from(await file.arrayBuffer());
+  const dir = path.join(UPLOAD_DIR, 'telas');
+  await mkdir(dir, { recursive: true });
+  const id = randomUUID();
+  const square = await sharp(buf, { failOn: 'error' }).rotate().resize({ width: 600, height: 600, fit: 'cover' }).webp({ quality: 84 }).toBuffer();
+  await writeFile(path.join(dir, `${id}.webp`), square);
+  const { channels } = await sharp(square).stats();
+  const hex = '#' + channels.slice(0, 3).map((c) => Math.round(c.mean).toString(16).padStart(2, '0')).join('');
+  return { url: `/uploads/telas/${id}.webp`, hex };
+}

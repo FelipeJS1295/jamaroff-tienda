@@ -354,3 +354,24 @@ table.table { width: 100%; border-collapse: collapse; font-size: 15px; }
 .cat-add .only-producto { display: none; }
 .cat-add:has(input[value='producto']:checked) .only-producto { display: block; }
 .cat-add:has(input[value='producto']:checked) .not-telas, .cat-add:has(input[value='telas']:checked) .not-telas label:not(:first-child):not(.full) { display: none; }
+
+/* Muestrario de telas */
+.fab-products { display: flex; flex-wrap: wrap; gap: 8px; }
+.fab-products a { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; border: 1px solid var(--line); border-radius: 6px; color: inherit; text-decoration: none; font-size: 14px; }
+.fab-products a:hover { border-color: var(--ink); }
+.fab-products img, .fab-noimg { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; background: #EFE8DC; display: block; }
+.fab-products small { display: block; color: var(--muted); font-size: 12px; }
+.fab-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.fab-head img { width: 64px; height: 64px; object-fit: cover; border-radius: 4px; }
+.fab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.fab-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 6px; scroll-margin-top: 90px; }
+.fab-card:target { border-color: var(--sage); box-shadow: 0 0 0 2px var(--sage); }
+.fab-card .input { height: 40px; }
+.fab-card input[type='file'] { font-size: 12px; max-width: 100%; }
+.fab-circle { width: 84px; height: 84px; border-radius: 50%; overflow: hidden; display: block; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.fab-circle img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fab-add { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; align-items: end; }
+.fab-add input[type='file'] { font-size: 13px; }
+.variant-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.variant-list li { display: flex; align-items: center; gap: 12px; }
+.variant-list img, .variant-list .fab-noimg { width: 48px; height: 48px; object-fit: cover; border-radius: 4px; }
