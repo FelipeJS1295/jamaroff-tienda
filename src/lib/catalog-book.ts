@@ -5,7 +5,7 @@ import { db, schema } from '@/db';
 const { catalogs, catalogPages, products, productImages, productVariants, categories } = schema;
 
 /** Una tela del muestrario: nombre del color, tipo (Felpa, Lino…) y foto */
-export type BookSwatch = { name: string; hex: string; fabric: string | null; image: string | null };
+export type BookSwatch = { name: string; hex: string; fabric: string | null; image: string | null; /** Variante que se muestra al tocar la tela */ productId: number | null };
 export type BookProduct = {
   id: number;
   slug: string;
@@ -57,7 +57,11 @@ export async function getBook(slug: string, opts: { includeDraft?: boolean } = {
   const mates = groups.length
     ? await db.select({ id: products.id }).from(products).where(and(inArray(products.variantGroup, groups), eq(products.active, true)))
     : [];
-  const ids = [...new Set([...pageIds, ...mates.map((m) => m.id)])];
+  // …y los productos a los que apuntan sus telas
+  const linked = pageIds.length
+    ? (await db.select({ id: productVariants.linkedProductId }).from(productVariants).where(and(inArray(productVariants.productId, pageIds), isNotNull(productVariants.linkedProductId)))).map((r) => r.id!)
+    : [];
+  const ids = [...new Set([...pageIds, ...mates.map((m) => m.id), ...linked])];
   const [prods, imgs, vars] = ids.length
     ? await Promise.all([
         db
@@ -70,7 +74,7 @@ export async function getBook(slug: string, opts: { includeDraft?: boolean } = {
       ])
     : [[], [], []];
 
-  const toSwatch = (v: (typeof vars)[number]): BookSwatch => ({ name: v.name, hex: v.hex, fabric: v.fabric, image: v.imageUrl });
+  const toSwatch = (v: (typeof vars)[number]): BookSwatch => ({ name: v.name, hex: v.hex, fabric: v.fabric, image: v.imageUrl, productId: v.linkedProductId });
   const base = new Map<number, BookVariant & { group: string | null }>();
   for (const { p, category } of prods) {
     base.set(p.id, {
@@ -93,7 +97,12 @@ export async function getBook(slug: string, opts: { includeDraft?: boolean } = {
   const strip = ({ group: _g, ...v }: BookVariant & { group: string | null }): BookVariant => v;
   const byId = new Map<number, BookProduct>();
   for (const b of base.values()) {
-    const variants = b.group ? [...base.values()].filter((x) => x.group === b.group).sort((x, y) => x.name.localeCompare(y.name, 'es')).map(strip) : [];
+    // Mismo grupo, más los que apuntan sus telas (aunque no estén unidos en el grupo)
+    const fromSwatches = new Set(b.swatches.map((w) => w.productId).filter((x): x is number => x != null));
+    const variants = [...base.values()]
+      .filter((x) => x.id === b.id || (b.group && x.group === b.group) || fromSwatches.has(x.id))
+      .sort((x, y) => x.name.localeCompare(y.name, 'es'))
+      .map(strip);
     byId.set(b.id, { ...strip(b), variants: variants.length > 1 ? variants : [] });
   }
 

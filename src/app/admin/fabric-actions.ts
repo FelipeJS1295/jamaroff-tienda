@@ -30,6 +30,27 @@ function refresh() {
   revalidatePath('/', 'layout');
 }
 
+/** Une dos productos como variantes de color (si alguno ya tenía grupo, se juntan todos) */
+async function joinGroup(a: number, b: number) {
+  if (a === b) return;
+  const both = await db.select({ id: products.id, group: products.variantGroup }).from(products).where(inArray(products.id, [a, b]));
+  if (both.length < 2) return;
+  const groups = [...new Set(both.map((p) => p.group).filter((g): g is string => !!g))];
+  const group = groups[0] ?? randomUUID();
+  await db
+    .update(products)
+    .set({ variantGroup: group })
+    .where(groups.length ? or(inArray(products.id, [a, b]), inArray(products.variantGroup, groups)) : inArray(products.id, [a, b]));
+}
+
+/** Producto en este color elegido en el formulario (vacío = ninguno) */
+async function linkedFrom(fd: FormData) {
+  const id = int(fd, 'linkedProductId');
+  if (!id) return null;
+  const [p] = await db.select({ id: products.id }).from(products).where(eq(products.id, id)).limit(1);
+  return p?.id ?? null;
+}
+
 /* ─── Muestrario de telas ──────────────────────────────────────────── */
 
 export async function addSwatchAction(fd: FormData) {
@@ -51,7 +72,9 @@ export async function addSwatchAction(fd: FormData) {
     .select({ max: sql<number>`coalesce(max(${productVariants.position}), -1)::int` })
     .from(productVariants)
     .where(eq(productVariants.productId, productId!));
-  await db.insert(productVariants).values({ productId: productId!, name, fabric: str(fd, 'fabric') || null, imageUrl: saved!.url, hex: saved!.hex, position: max + 1 });
+  const linked = await linkedFrom(fd);
+  await db.insert(productVariants).values({ productId: productId!, name, fabric: str(fd, 'fabric') || null, imageUrl: saved!.url, hex: saved!.hex, linkedProductId: linked, position: max + 1 });
+  if (linked) await joinGroup(productId!, linked);
   refresh();
   go(`${back}#telas`, { ok: `Tela agregada: ${str(fd, 'fabric') ? `${str(fd, 'fabric')} · ` : ''}${name}` });
 }
@@ -77,7 +100,9 @@ export async function saveSwatchAction(fd: FormData) {
       go(back, { error: (e as Error).message });
     }
   }
-  await db.update(productVariants).set({ name, fabric: str(fd, 'fabric') || null, imageUrl, hex }).where(eq(productVariants.id, v!.id));
+  const linked = await linkedFrom(fd);
+  await db.update(productVariants).set({ name, fabric: str(fd, 'fabric') || null, imageUrl, hex, linkedProductId: linked }).where(eq(productVariants.id, v!.id));
+  if (linked) await joinGroup(v!.productId, linked);
   refresh();
   go(`${back}#s${v!.id}`, { ok: 'Tela guardada' });
 }
@@ -118,15 +143,7 @@ export async function linkVariantAction(fd: FormData) {
   const back = `/admin/productos/${id}#variantes`;
   if (!id) go('/admin/productos');
   if (!otherId || otherId === id) go(back, { error: 'Elige el producto que es la variante' });
-  const both = await db.select({ id: products.id, group: products.variantGroup }).from(products).where(inArray(products.id, [id!, otherId!]));
-  if (both.length < 2) go(back, { error: 'Ese producto ya no existe' });
-  const groups = [...new Set(both.map((p) => p.group).filter((g): g is string => !!g))];
-  // Si los dos ya tenían grupo, se juntan en uno: todos quedan como variantes entre sí
-  const group = groups[0] ?? randomUUID();
-  await db
-    .update(products)
-    .set({ variantGroup: group })
-    .where(groups.length ? or(inArray(products.id, [id!, otherId!]), inArray(products.variantGroup, groups)) : inArray(products.id, [id!, otherId!]));
+  await joinGroup(id!, otherId!);
   refresh();
   go(back, { ok: 'Variante agregada' });
 }

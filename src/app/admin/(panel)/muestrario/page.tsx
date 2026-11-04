@@ -8,6 +8,21 @@ import { AutoSubmitSelect, ConfirmButton } from '@/components/auto-submit';
 
 export const metadata = { title: 'Muestrario de telas' };
 
+type Opt = { id: number; name: string };
+/** Variante: el producto que se ve al tocar esta tela en el catálogo */
+function VariantSelect({ products, self, value }: { products: Opt[]; self: Opt; value: number | null }) {
+  return (
+    <label className="field">
+      <span>Variante (producto en este color)</span>
+      <select className="select" name="linkedProductId" defaultValue={value ? String(value) : ''} style={{ height: 40 }}>
+        <option value="">Sin variante</option>
+        <option value={self.id}>Este mismo producto</option>
+        {products.filter((o) => o.id !== self.id).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+      </select>
+    </label>
+  );
+}
+
 export default async function Muestrario({ searchParams }: { searchParams: Promise<{ producto?: string; ok?: string; error?: string }> }) {
   const sp = await searchParams;
   const pid = Number(sp.producto) || 0;
@@ -26,13 +41,14 @@ export default async function Muestrario({ searchParams }: { searchParams: Promi
   const p = prods.find((x) => x.id === pid) ?? null;
   const swatches = p ? await db.select().from(schema.productVariants).where(eq(schema.productVariants.productId, p.id)).orderBy(asc(schema.productVariants.position), asc(schema.productVariants.id)) : [];
   const withFabrics = prods.filter((x) => x.telas > 0);
+  const byName = [...prods].sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
   return (
     <>
       <div className="admin-head">
         <div>
           <h1>Muestrario de telas</h1>
-          <p className="muted" style={{ margin: '6px 0 0' }}>Elige un producto y súbele la foto de cada tela. En el catálogo digital se ven como círculos junto a las fotos del producto.</p>
+          <p className="muted" style={{ margin: '6px 0 0' }}>Elige un producto y súbele la foto de cada tela, con su variante. En el catálogo digital se ven como círculos junto a las fotos: al tocar una, se ve el producto en ese color.</p>
         </div>
       </div>
       <Flash ok={sp.ok} error={sp.error} />
@@ -89,6 +105,7 @@ export default async function Muestrario({ searchParams }: { searchParams: Promi
                     {!s.imageUrl ? <p className="small" style={{ margin: 0, color: 'var(--danger)' }}>Falta la foto de la tela</p> : null}
                     <label className="field"><span>Tipo de tela</span><input className="input" name="fabric" list="tipos-tela" defaultValue={s.fabric ?? ''} placeholder="Felpa, Lino…" /></label>
                     <label className="field"><span>Color</span><input className="input" name="name" defaultValue={s.name} required /></label>
+                    <VariantSelect products={byName} self={p} value={s.linkedProductId} />
                     <label className="field"><span>{s.imageUrl ? 'Cambiar foto' : 'Foto de la tela'}</span><input type="file" name="image" accept="image/jpeg,image/png,image/webp" /></label>
                     <div className="row" style={{ gap: 6, alignItems: 'center' }}>
                       <button className="btn btn-dark btn-sm" type="submit">Guardar</button>
@@ -109,10 +126,12 @@ export default async function Muestrario({ searchParams }: { searchParams: Promi
               <label className="field"><span>Foto de la tela</span><input type="file" name="image" accept="image/jpeg,image/png,image/webp" required /></label>
               <label className="field"><span>Tipo de tela</span><input className="input" name="fabric" list="tipos-tela" placeholder="Felpa, Lino, Charleston…" /></label>
               <label className="field"><span>Nombre del color</span><input className="input" name="name" placeholder="Gris oscuro" required /></label>
+              <VariantSelect products={byName} self={p} value={null} />
               <button className="btn btn-dark btn-sm" type="submit">Agregar tela</button>
             </form>
             <p className="small muted" style={{ marginBottom: 0 }}>
-              Una foto de cerca de la tela, con luz pareja. Se recorta en cuadrado al centro. El recargo por tela y &quot;solo a pedido&quot; se siguen ajustando en el
+              Una foto de cerca de la tela, con luz pareja. Se recorta en cuadrado al centro. En <b>Variante</b> eliges el producto que es este mismo modelo en
+              ese color: en el catálogo, al tocar la tela se muestran sus fotos (elige &quot;Este mismo producto&quot; para la tela con que está fotografiado). El recargo por tela y &quot;solo a pedido&quot; se siguen ajustando en el
               producto, en Telas / colores.
             </p>
           </section>

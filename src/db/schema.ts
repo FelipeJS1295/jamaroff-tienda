@@ -94,6 +94,8 @@ export const productVariants = pgTable('product_variants', {
   // Muestrario: foto de la tela y su tipo (Felpa, Lino, Charleston…). "name" es el nombre del color.
   fabric: text('fabric'),
   imageUrl: text('image_url'),
+  // Variante: el producto que se ve en este color (al tocar la tela en el catálogo se muestran sus fotos)
+  linkedProductId: integer('linked_product_id').references(() => products.id, { onDelete: 'set null' }),
   priceDelta: integer('price_delta').notNull().default(0),
   madeToOrderOnly: boolean('made_to_order_only').notNull().default(false),
   position: integer('position').notNull().default(0),

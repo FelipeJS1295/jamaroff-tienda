@@ -216,7 +216,13 @@ function GalleryDialog({ g, onClose, onAsk }: { g: Gallery; onClose: () => void;
   // Producto que se está viendo: el de la página o una de sus variantes de color
   const [cur, setCur] = useState<BookVariant>(g.product);
   const [i, setI] = useState(0);
-  const [fabric, setFabric] = useState<number | null>(null);
+  // Si las telas del producto apuntan a variantes, el muestrario es el que cambia de color
+  const byId = useMemo(() => new Map([g.product, ...g.product.variants].map((v) => [v.id, v] as const)), [g.product]);
+  const nav = g.product.swatches.some((w) => w.productId != null && byId.has(w.productId));
+  const [fabric, setFabric] = useState<number | null>(() => {
+    const k = g.product.swatches.findIndex((w) => w.productId === g.product.id);
+    return k >= 0 ? k : null;
+  });
   const isPage = cur.id === g.product.id;
   const images = useMemo(() => [...new Set([isPage ? g.cover : null, ...cur.images].filter(Boolean) as string[])], [cur, isPage, g.cover]);
   const n = images.length;
@@ -236,8 +242,17 @@ function GalleryDialog({ g, onClose, onAsk }: { g: Gallery; onClose: () => void;
   const touch = useRef<number | null>(null);
   const pick = (v: BookVariant) => { setCur(v); setI(0); setFabric(null); };
   const name = isPage ? g.title : cur.name;
-  const variants = g.product.variants;
-  const picked = fabric != null ? cur.swatches[fabric] : null;
+  const swatches = nav ? g.product.swatches : cur.swatches;
+  // Con muestrario que navega, la fila de colores sobra
+  const variants = nav ? [] : g.product.variants;
+  const picked = fabric != null ? swatches[fabric] : null;
+  const tapSwatch = (k: number) => {
+    const target = nav && swatches[k].productId != null ? byId.get(swatches[k].productId!) : undefined;
+    if (target) {
+      if (target.id !== cur.id) { setCur(target); setI(0); }
+      setFabric(k);
+    } else setFabric(k === fabric ? null : k);
+  };
 
   return (
     <dialog
@@ -298,11 +313,11 @@ function GalleryDialog({ g, onClose, onAsk }: { g: Gallery; onClose: () => void;
           </section>
         ) : null}
 
-        {cur.swatches.length ? (
+        {swatches.length ? (
           <section>
             <h3>Muestrario de telas</h3>
             <div className="lb-swatches" role="list">
-              {cur.swatches.map((s, k) => (
+              {swatches.map((s, k) => (
                 <button
                   key={`${s.fabric}|${s.name}|${k}`}
                   type="button"
@@ -311,13 +326,13 @@ function GalleryDialog({ g, onClose, onAsk }: { g: Gallery; onClose: () => void;
                   style={swatchStyle(s)}
                   aria-label={s.fabric ? `${s.name}, ${s.fabric}` : s.name}
                   aria-pressed={k === fabric}
-                  onClick={() => setFabric(k === fabric ? null : k)}
+                  onClick={() => tapSwatch(k)}
                 >
                   <span className="lb-tip" aria-hidden="true"><b>{s.name}</b>{s.fabric ? <span>{s.fabric}</span> : null}</span>
                 </button>
               ))}
             </div>
-            <p className="lb-picked" aria-live="polite">{picked ? <><b>{picked.name}</b>{picked.fabric ? ` · ${picked.fabric}` : ''}</> : 'Pasa el cursor o toca una tela para ver su nombre'}</p>
+            <p className="lb-picked" aria-live="polite">{picked ? <><b>{picked.name}</b>{picked.fabric ? ` · ${picked.fabric}` : ''}</> : nav ? 'Toca una tela para ver el producto en ese color' : 'Pasa el cursor o toca una tela para ver su nombre'}</p>
           </section>
         ) : null}
 

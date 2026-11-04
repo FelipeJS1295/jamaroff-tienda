@@ -43,6 +43,13 @@
       "when": 1793810292261,
       "tag": "0005_muestrario_variantes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793815057891,
+      "tag": "0006_tela_variante",
+      "breakpoints": true
     }
   ]
 }

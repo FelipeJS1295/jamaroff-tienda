@@ -1,0 +1,2 @@
+ALTER TABLE "product_variants" ADD COLUMN "linked_product_id" integer;--> statement-breakpoint
+ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_linked_product_id_products_id_fk" FOREIGN KEY ("linked_product_id") REFERENCES "public"."products"("id") ON DELETE set null ON UPDATE no action;
