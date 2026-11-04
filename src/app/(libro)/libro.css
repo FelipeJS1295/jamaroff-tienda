@@ -21,7 +21,7 @@
   --sans: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
   min-height: 100svh;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   background: radial-gradient(ellipse 70% 60% at 50% 50%, #26332B 0%, #1C2620 60%, #141B17 100%);
   color: var(--on-dark);
   font-family: var(--sans);
@@ -33,25 +33,21 @@
 .libro .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* Barra superior */
-.libro-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; padding: 14px clamp(16px, 3vw, 36px); }
-.libro-brand { font-family: var(--serif); letter-spacing: .32em; font-size: 18px; text-decoration: none; }
-.libro-title { margin: 0; font-family: var(--serif); font-size: 17px; text-align: center; display: flex; flex-direction: column; align-items: center; }
-.libro-draft { font-family: var(--sans); font-size: 11px; color: #1B1C19; background: #E9C350; padding: 1px 8px; border-radius: 99px; margin-top: 3px; }
-.libro-tools { justify-self: end; display: flex; align-items: center; gap: 8px; font-size: 14px; }
-.libro-count { font-variant-numeric: tabular-nums; color: var(--on-dark-muted); margin-right: 6px; }
-.libro-btn { height: 36px; padding: 0 14px; border-radius: 99px; border: 1px solid rgba(233,229,220,.3); background: transparent; color: inherit; font: inherit; display: inline-flex; align-items: center; text-decoration: none; cursor: pointer; }
-.libro-btn:hover { border-color: var(--on-dark); }
-.libro-hint { margin: 0; text-align: center; font-size: 12px; color: var(--on-dark-muted); padding: 8px 16px 14px; }
+/* Pie discreto: la marca pequeña, el número de página y la ayuda */
+.libro-foot { display: flex; align-items: center; justify-content: center; gap: 10px 22px; flex-wrap: wrap; padding: 6px 16px 12px; font-size: 12px; color: var(--on-dark-muted); }
+.libro-brand { font-family: var(--serif); letter-spacing: .3em; font-size: 12px; color: var(--on-dark); text-decoration: none; }
+.libro-draft { font-size: 11px; color: #1B1C19; background: #E9C350; padding: 1px 8px; border-radius: 99px; }
+.libro-count { font-variant-numeric: tabular-nums; }
 
 /* Escenario y flechas */
-.libro-stage { position: relative; display: flex; align-items: center; justify-content: center; gap: clamp(8px, 2vw, 28px); min-height: 0; touch-action: pan-y; }
+.libro-stage { position: relative; display: flex; align-items: center; justify-content: center; gap: clamp(8px, 2vw, 28px); min-height: 0; padding-top: 14px; touch-action: pan-y; }
 .libro-arrow { flex: none; width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(233,229,220,.25); background: rgba(255,255,255,.04); color: var(--on-dark); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .2s, border-color .2s, opacity .2s; }
 .libro-arrow:hover:not(:disabled) { background: rgba(255,255,255,.1); border-color: var(--on-dark); }
 .libro-arrow:disabled { opacity: .2; cursor: default; }
 
 /* El libro */
 .book {
-  --ph: min(calc(100svh - 150px), calc((100vw - 180px) / 2 * 1.4142));
+  --ph: min(calc(100svh - 58px), calc((100vw - 176px) / 2 * 1.4142));
   --pw: calc(var(--ph) / 1.4142);
   position: relative;
   width: calc(var(--pw) * 2);
@@ -84,14 +80,11 @@
 @keyframes libro-prev { from { transform: rotateY(0); } to { transform: rotateY(180deg); } }
 
 /* Teléfono: una página, entra deslizándose */
-.book.is-single { --ph: calc(100svh - 128px); --pw: min(calc(100vw - 20px), calc(var(--ph) / 1.25)); width: var(--pw); }
+.book.is-single { --ph: calc(100svh - 58px); --pw: min(calc(100vw - 20px), calc(var(--ph) / 1.25)); width: var(--pw); }
 .book.is-single .book-page { left: 0; animation: libro-in .35s ease both; }
 @keyframes libro-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
 @media (max-width: 900px) {
   .libro-arrow { display: none; }
-  .libro-bar { grid-template-columns: auto 1fr; }
-  .libro-title { display: none; }
-  .libro-brand { font-size: 15px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .book, .book-page { transition: none !important; animation: none !important; }
@@ -195,12 +188,6 @@
 .ask-actions .pg-link, .ask-done .pg-link { font-size: 14px; }
 .ask-error { color: #9E3B2C; font-size: 14px; margin: 0; }
 .ask-done p { font-size: 16px; line-height: 1.5; margin: 0 0 18px; }
-.libro-index h2 { margin-bottom: 14px; }
-.libro-index ol { list-style: none; margin: 0; padding: 0; }
-.libro-index button { width: 100%; display: flex; justify-content: space-between; gap: 16px; padding: 10px 2px; border: 0; border-bottom: 1px solid #D3CEC3; background: none; font: inherit; font-size: 15px; color: inherit; text-align: left; cursor: pointer; }
-.libro-index button:hover { color: #33503D; }
-.libro-index .is-chapter button { font-family: 'Bodoni Moda', Georgia, serif; font-size: 19px; padding-top: 16px; }
-.libro-index-n { color: #5E625A; font-variant-numeric: tabular-nums; }
 
 /* Galería del producto: a pantalla completa, sobre el verde del libro */
 .lb { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: #121915; color: #ECE9E3; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; font-family: 'Hanken Grotesk', system-ui, sans-serif; }

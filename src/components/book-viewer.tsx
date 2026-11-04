@@ -292,7 +292,6 @@ export function BookViewer({ book, whatsapp, instagram }: { book: Book; whatsapp
 
   const [page, setPage] = useState(0); // primera página visible (se mantiene al cambiar de vista)
   const [flip, setFlip] = useState<null | { dir: 'next' | 'prev'; from: number; to: number }>(null);
-  const [indexOpen, setIndexOpen] = useState(false);
   const cur = spreadOf(page);
   const firstOf = (s: number) => spreads[s].find((i) => i >= 0) ?? 0;
 
@@ -324,7 +323,7 @@ export function BookViewer({ book, whatsapp, instagram }: { book: Book; whatsapp
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (asking || indexOpen || gallery) return;
+      if (asking || gallery) return;
       if (e.key === 'ArrowRight' || e.key === 'PageDown') goSpread(cur + 1);
       if (e.key === 'ArrowLeft' || e.key === 'PageUp') goSpread(cur - 1);
       if (e.key === 'Home') goSpread(0);
@@ -332,7 +331,7 @@ export function BookViewer({ book, whatsapp, instagram }: { book: Book; whatsapp
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goSpread, cur, spreads.length, asking, indexOpen, gallery]);
+  }, [goSpread, cur, spreads.length, asking, gallery]);
 
   const touch = useRef<{ x: number; y: number } | null>(null);
   const view = (i: number) => (i >= 0 ? leaves[i] : null);
@@ -342,19 +341,9 @@ export function BookViewer({ book, whatsapp, instagram }: { book: Book; whatsapp
   const leafFaces = flip ? (flip.dir === 'next' ? [spreads[flip.from][1], spreads[flip.to][0]] : [spreads[flip.from][0], spreads[flip.to][1]]) : null;
   const visible = spreads[cur].filter((i) => i >= 0);
   const label = visible.length === 2 ? `${visible[0] + 1}–${visible[1] + 1}` : `${(visible[0] ?? 0) + 1}`;
-  const titleOf = (l: Leaf) => (l.kind === 'contraportada' ? 'Contraportada' : l.kind === 'producto' ? l.title || l.product?.name : l.title || (l.kind === 'telas' ? 'Telas y colores' : l.kind === 'portada' ? book.title : 'Página'));
 
   return (
     <div className="libro">
-      <header className="libro-bar">
-        <Link href="/" className="libro-brand" aria-label="Jamaroff, ir a la tienda">JAMAROFF</Link>
-        <p className="libro-title">{book.title}{!book.published ? <span className="libro-draft">Borrador · solo tú lo ves</span> : null}</p>
-        <div className="libro-tools">
-          <span className="libro-count" aria-live="polite">{label} / {total}</span>
-          <button type="button" className="libro-btn" onClick={() => setIndexOpen(true)}>Índice</button>
-          <Link href="/" className="libro-btn">Tienda</Link>
-        </div>
-      </header>
 
       <main
         className="libro-stage"
@@ -390,27 +379,12 @@ export function BookViewer({ book, whatsapp, instagram }: { book: Book; whatsapp
         <button type="button" className="libro-arrow is-next" onClick={next} disabled={cur >= spreads.length - 1} aria-label="Página siguiente"><Chevron dir="next" /></button>
       </main>
 
-      <p className="libro-hint">{single ? 'Desliza para pasar las páginas' : 'Usa las flechas o el teclado (← →) para pasar las páginas'}</p>
-
-      {indexOpen ? (
-        <dialog className="ask libro-index" ref={(d) => { if (d && !d.open) d.showModal(); }} onClose={() => setIndexOpen(false)} onClick={(e) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLDialogElement).close(); }} aria-label="Índice">
-          <div className="ask-card">
-            <button type="button" className="ask-close" onClick={(e) => (e.currentTarget.closest('dialog') as HTMLDialogElement).close()} aria-label="Cerrar">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-            </button>
-            <h2>Índice</h2>
-            <ol>
-              {leaves.map((l, i) => (
-                <li key={`${l.id}-${i}`} className={l.kind === 'separador' || l.kind === 'portada' ? 'is-chapter' : ''}>
-                  <button type="button" onClick={(e) => { setPage(i); (e.currentTarget.closest('dialog') as HTMLDialogElement).close(); }}>
-                    <span>{titleOf(l)}</span><span className="libro-index-n">{i + 1}</span>
-                  </button>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </dialog>
-      ) : null}
+      <footer className="libro-foot">
+        <Link href="/" className="libro-brand" aria-label="Jamaroff, ir a la tienda">JAMAROFF</Link>
+        {!book.published ? <span className="libro-draft">Borrador · solo tú lo ves</span> : null}
+        <span className="libro-count" aria-live="polite">{label} / {total}</span>
+        <span className="libro-hint">{single ? 'Desliza para pasar las páginas' : 'Flechas o teclado ← → para pasar las páginas'}</span>
+      </footer>
 
       {gallery ? <GalleryDialog g={gallery} onClose={() => setGallery(null)} onAsk={() => setAsking(gallery.product)} /> : null}
       {asking ? <AskDialog product={asking} ctx={ctx} onClose={() => setAsking(null)} /> : null}
