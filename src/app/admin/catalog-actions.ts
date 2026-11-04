@@ -122,7 +122,8 @@ export async function savePageAction(fd: FormData) {
     .set({
       title: str(fd, 'title') || null,
       subtitle: str(fd, 'subtitle') || null,
-      body: str(fd, 'body') || null,
+      // Páginas de producto: "La misma de la tienda" no guarda texto propio
+      body: page!.kind === 'producto' && str(fd, 'descMode') === 'tienda' ? null : str(fd, 'body') || null,
       imageUrl,
       productId: page!.kind === 'producto' ? int(fd, 'productId') ?? page!.productId : null,
     })

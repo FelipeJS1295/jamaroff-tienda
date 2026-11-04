@@ -29,6 +29,7 @@ export default async function EditarCatalogo({ params, searchParams }: { params:
       .select({
         id: schema.products.id,
         name: schema.products.name,
+        description: schema.products.description,
         active: schema.products.active,
         category: schema.categories.name,
         thumb: sql<string | null>`(select coalesce(i.thumb_url, i.url) from product_images i where i.product_id = "products"."id" order by i.position limit 1)`,
@@ -100,7 +101,18 @@ export default async function EditarCatalogo({ params, searchParams }: { params:
                       ) : null}
                       <label className="field"><span>{p.kind === 'producto' ? 'Título (vacío = nombre del producto)' : 'Título'}</span><input className="input" name="title" defaultValue={p.title ?? ''} /></label>
                       <label className="field"><span>{p.kind === 'producto' ? 'Frase destacada (opcional)' : 'Bajada'}</span><input className="input" name="subtitle" defaultValue={p.subtitle ?? ''} /></label>
-                      <label className="field full"><span>{p.kind === 'producto' ? 'Texto propio (vacío = descripción del producto)' : 'Texto'}</span><textarea className="textarea" name="body" defaultValue={p.body ?? ''} /></label>
+                      {p.kind === 'producto' ? (
+                        <fieldset className="field full desc-choice">
+                          <legend>Descripción</legend>
+                          <label className="check small"><input type="radio" name="descMode" value="tienda" defaultChecked={!p.body} /> La misma de la tienda</label>
+                          <label className="check small"><input type="radio" name="descMode" value="propia" defaultChecked={!!p.body} /> Escribir otra para el catálogo</label>
+                          <p className="desc-store small">{prod?.description || 'Este producto no tiene descripción en la tienda.'}</p>
+                          <textarea className="textarea desc-own" name="body" rows={6} defaultValue={p.body ?? prod?.description ?? ''} aria-label="Descripción para el catálogo" />
+                          <span className="small muted">En la página del catálogo se ven unas 3 líneas; el texto completo queda en la tienda.</span>
+                        </fieldset>
+                      ) : (
+                        <label className="field full"><span>Texto</span><textarea className="textarea" name="body" defaultValue={p.body ?? ''} /></label>
+                      )}
                       {p.kind !== 'telas' ? (
                         <label className="field"><span>{p.kind === 'producto' ? 'Foto principal propia (vacío = la del producto)' : 'Foto'}</span><input type="file" name="image" accept="image/jpeg,image/png,image/webp" /></label>
                       ) : null}

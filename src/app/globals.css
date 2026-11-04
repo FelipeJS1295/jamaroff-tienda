@@ -375,3 +375,11 @@ table.table { width: 100%; border-collapse: collapse; font-size: 15px; }
 .variant-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
 .variant-list li { display: flex; align-items: center; gap: 12px; }
 .variant-list img, .variant-list .fab-noimg { width: 48px; height: 48px; object-fit: cover; border-radius: 4px; }
+
+/* Catálogo: descripción de la tienda o propia */
+.desc-choice { border: 0; padding: 0; margin: 0; min-width: 0; }
+.desc-choice legend { color: var(--muted); font-size: 14px; padding: 0; margin-bottom: 6px; }
+.desc-choice .desc-store { margin: 4px 0 0; padding: 10px 12px; background: #F6F1E8; border-radius: 4px; white-space: pre-line; max-height: 160px; overflow-y: auto; color: var(--ink); }
+.desc-choice .desc-own { display: none; margin-top: 4px; }
+.desc-choice:has(input[value='propia']:checked) .desc-own { display: block; }
+.desc-choice:has(input[value='propia']:checked) .desc-store { display: none; }
