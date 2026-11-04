@@ -6,7 +6,8 @@ import type { Book, BookPage, BookProduct } from '@/lib/catalog-book';
 
 /** Contraportada automática al final del libro */
 type Leaf = BookPage | { id: -1; kind: 'contraportada' };
-type Ctx = { book: Book; total: number; whatsapp: string | null; instagram: string | null; ask: (p: BookProduct) => void };
+type Ctx = { book: Book; total: number; whatsapp: string | null; instagram: string | null; ask: (p: BookProduct) => void; show: (g: Gallery) => void };
+type Gallery = { name: string; images: string[]; product: BookProduct };
 
 const FLIP_MS = 760;
 const Chevron = ({ dir }: { dir: 'prev' | 'next' }) => (
@@ -105,7 +106,7 @@ function PageView({ leaf, n, ctx }: { leaf: Leaf | null; n: number; ctx: Ctx }) 
   // Producto
   const p = leaf.product!;
   const main = leaf.imageUrl ?? p.images[0] ?? null;
-  const extra = p.images.filter((u) => u !== main).slice(0, 2);
+  const photos = [...new Set([main, ...p.images].filter(Boolean) as string[])];
   const specs = [
     p.dimensions ? ['Medidas', p.dimensions] : null,
     p.material ? ['Material', p.material] : null,
@@ -113,11 +114,9 @@ function PageView({ leaf, n, ctx }: { leaf: Leaf | null; n: number; ctx: Ctx }) 
   ].filter(Boolean) as [string, string][];
   return (
     <div className="pg pg-product">
-      <button type="button" className="pg-product-media" onClick={() => ctx.ask(p)} aria-label={`Consultar precio de ${p.name}`}>
+      <button type="button" className="pg-product-media" onClick={() => (photos.length ? ctx.show({ name: leaf.title || p.name, images: photos, product: p }) : ctx.ask(p))} aria-label={photos.length ? `Ver las fotos de ${p.name}` : `Consultar precio de ${p.name}`}>
         {main ? <img src={main} alt={p.name} /> : null}
-        {extra.length ? (
-          <span className="pg-product-extra" aria-hidden="true">{extra.map((u) => <img key={u} src={u} alt="" />)}</span>
-        ) : null}
+        {photos.length > 1 ? <span className="pg-product-count" aria-hidden="true">{photos.length} fotos</span> : null}
       </button>
       <div className="pg-product-text">
         <p className="pg-kicker">{p.category ?? 'Jamaroff'}</p>
@@ -203,12 +202,76 @@ function AskDialog({ product, ctx, onClose }: { product: BookProduct; ctx: Ctx; 
   );
 }
 
+/* ─── Galería del producto ─────────────────────────────────────────── */
+function GalleryDialog({ g, onClose, onAsk }: { g: Gallery; onClose: () => void; onAsk: () => void }) {
+  const dlg = useRef<HTMLDialogElement>(null);
+  const [i, setI] = useState(0);
+  const n = g.images.length;
+  const go = useCallback((d: number) => setI((x) => (x + d + n) % n), [n]);
+  useEffect(() => { dlg.current?.showModal(); }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'ArrowRight') go(1); if (e.key === 'ArrowLeft') go(-1); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [go]);
+  // Precarga la siguiente para que el cambio sea inmediato
+  useEffect(() => { if (n > 1) new Image().src = g.images[(i + 1) % n]; }, [i, n, g.images]);
+  const touch = useRef<number | null>(null);
+
+  return (
+    <dialog
+      ref={dlg}
+      className="lb"
+      aria-label={`Fotos de ${g.name}`}
+      onClose={onClose}
+      onClick={(e) => { if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains('lb-stage')) dlg.current?.close(); }}
+    >
+      <div className="lb-bar">
+        <p className="lb-name">{g.name}<span>{i + 1} / {n}</span></p>
+        <button type="button" className="lb-close" onClick={() => dlg.current?.close()} aria-label="Cerrar">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </div>
+      <div
+        className="lb-stage"
+        onTouchStart={(e) => { touch.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => {
+          const x = touch.current;
+          touch.current = null;
+          if (x === null) return;
+          const dx = e.changedTouches[0].clientX - x;
+          if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+        }}
+      >
+        <img key={g.images[i]} src={g.images[i]} alt={`${g.name}, foto ${i + 1} de ${n}`} />
+        {n > 1 ? (
+          <>
+            <button type="button" className="lb-arrow is-prev" onClick={() => go(-1)} aria-label="Foto anterior"><Chevron dir="prev" /></button>
+            <button type="button" className="lb-arrow is-next" onClick={() => go(1)} aria-label="Foto siguiente"><Chevron dir="next" /></button>
+          </>
+        ) : null}
+      </div>
+      <div className="lb-foot">
+        {n > 1 ? (
+          <div className="lb-thumbs">
+            {g.images.map((u, k) => (
+              <button key={u} type="button" aria-label={`Foto ${k + 1}`} aria-current={k === i ? 'true' : undefined} onClick={() => setI(k)}><img src={u} alt="" /></button>
+            ))}
+          </div>
+        ) : <span />}
+        <button type="button" className="pg-btn lb-ask" onClick={() => { dlg.current?.close(); onAsk(); }}>Consultar precio</button>
+      </div>
+    </dialog>
+  );
+}
+
 /* ─── Libro ────────────────────────────────────────────────────────── */
 export function BookViewer({ book, whatsapp, instagram }: { book: Book; whatsapp: string | null; instagram: string | null }) {
   const leaves: Leaf[] = useMemo(() => [...book.pages, { id: -1, kind: 'contraportada' as const }], [book.pages]);
   const total = leaves.length;
   const [asking, setAsking] = useState<BookProduct | null>(null);
-  const ctx: Ctx = { book, total, whatsapp, instagram, ask: setAsking };
+  const [gallery, setGallery] = useState<Gallery | null>(null);
+  const ctx: Ctx = { book, total, whatsapp, instagram, ask: setAsking, show: setGallery };
 
   // Escritorio: doble página (portada sola a la derecha). Teléfono: una página.
   const [single, setSingle] = useState(false);
@@ -261,7 +324,7 @@ export function BookViewer({ book, whatsapp, instagram }: { book: Book; whatsapp
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (asking || indexOpen) return;
+      if (asking || indexOpen || gallery) return;
       if (e.key === 'ArrowRight' || e.key === 'PageDown') goSpread(cur + 1);
       if (e.key === 'ArrowLeft' || e.key === 'PageUp') goSpread(cur - 1);
       if (e.key === 'Home') goSpread(0);
@@ -269,7 +332,7 @@ export function BookViewer({ book, whatsapp, instagram }: { book: Book; whatsapp
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goSpread, cur, spreads.length, asking, indexOpen]);
+  }, [goSpread, cur, spreads.length, asking, indexOpen, gallery]);
 
   const touch = useRef<{ x: number; y: number } | null>(null);
   const view = (i: number) => (i >= 0 ? leaves[i] : null);
@@ -349,6 +412,7 @@ export function BookViewer({ book, whatsapp, instagram }: { book: Book; whatsapp
         </dialog>
       ) : null}
 
+      {gallery ? <GalleryDialog g={gallery} onClose={() => setGallery(null)} onAsk={() => setAsking(gallery.product)} /> : null}
       {asking ? <AskDialog product={asking} ctx={ctx} onClose={() => setAsking(null)} /> : null}
     </div>
   );
