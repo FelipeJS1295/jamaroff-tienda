@@ -289,3 +289,17 @@ export const catalogPages = pgTable('catalog_pages', {
 
 export type Catalog = typeof catalogs.$inferSelect;
 export type CatalogPage = typeof catalogPages.$inferSelect;
+
+// ─── Visitas de la tienda (estadísticas propias, sin cookies) ───────
+// Una fila por página vista. "visitor" es un código anónimo que cambia cada día
+// (no se guarda la IP), así se cuentan personas distintas por día sin rastrearlas.
+export const pageViews = pgTable('page_views', {
+  id: serial('id').primaryKey(),
+  at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+  path: text('path').notNull(),
+  visitor: text('visitor').notNull(),
+  /** google, instagram, facebook, whatsapp, tiktok, mercadolibre, otro sitio (dominio) o null = directo */
+  source: text('source'),
+  /** movil | tablet | escritorio */
+  device: text('device').notNull(),
+}, (t) => [index('page_views_at_idx').on(t.at)]);

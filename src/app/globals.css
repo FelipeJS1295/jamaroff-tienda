@@ -383,3 +383,16 @@ table.table { width: 100%; border-collapse: collapse; font-size: 15px; }
 .desc-choice .desc-own { display: none; margin-top: 4px; }
 .desc-choice:has(input[value='propia']:checked) .desc-own { display: block; }
 .desc-choice:has(input[value='propia']:checked) .desc-store { display: none; }
+
+/* Visitas */
+.visits-chart { display: flex; align-items: flex-end; gap: 3px; height: 180px; padding-top: 6px; border-bottom: 1px solid var(--line); }
+.visits-col { flex: 1; height: 100%; display: flex; align-items: flex-end; min-width: 2px; }
+.visits-col:hover .visits-bar { background: var(--ink); }
+.visits-bar { display: block; width: 100%; min-height: 2px; background: var(--sage); border-radius: 2px 2px 0 0; transition: background .15s; }
+.visits-axis { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.visits-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.visits-list li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(60px, 120px) 48px; align-items: center; gap: 12px; font-size: 14px; }
+.visits-list li > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.visits-list strong { text-align: right; font-variant-numeric: tabular-nums; }
+.visits-meter { height: 8px; background: #EFE8DC; border-radius: 99px; overflow: hidden; }
+.visits-meter i { display: block; height: 100%; background: var(--sage); border-radius: 99px; }

@@ -14,7 +14,7 @@ function monthStart() {
 export default async function AdminHome() {
   const { orders, products } = schema;
   const since = monthStart();
-  const [[month], [counts], recent, lowStock, [ws]] = await Promise.all([
+  const [[month], [counts], recent, lowStock, [ws], [visits]] = await Promise.all([
     db.select({ total: sql<number>`coalesce(sum(${orders.total}),0)::int`, n: sql<number>`count(*)::int` }).from(orders).where(and(eq(orders.paymentStatus, 'pagado'), gte(orders.paidAt, since))),
     db.select({
       porDespachar: sql<number>`count(*) filter (where ${orders.status} in ('pagado','listo_despacho'))::int`,
@@ -25,12 +25,16 @@ export default async function AdminHome() {
     db.select({ id: products.id, name: products.name, stock: products.stock }).from(products)
       .where(and(eq(products.active, true), inArray(products.mode, ['stock', 'ambos']), lte(products.stock, 2))).limit(10),
     db.select({ n: sql<number>`count(*)::int` }).from(schema.users).where(eq(schema.users.wholesaleStatus, 'pending')),
+    // Personas que entraron hoy (hora de Chile)
+    db.select({ people: sql<number>`count(distinct ${schema.pageViews.visitor})::int` }).from(schema.pageViews)
+      .where(sql`${schema.pageViews.at} >= date_trunc('day', now() at time zone 'America/Santiago') at time zone 'America/Santiago'`),
   ]);
 
   return (
     <>
       <div className="admin-head"><h1>Resumen</h1><Link href="/admin/productos/nuevo" className="btn btn-primary btn-sm">+ Nuevo producto</Link></div>
       <div className="tiles" style={{ marginBottom: 24 }}>
+        <Link className="tile" href="/admin/visitas"><div className="label">Visitas hoy</div><div className="value">{visits.people}</div><div className="small muted">ver estadísticas</div></Link>
         <div className="tile"><div className="label">Ventas pagadas este mes</div><div className="value">{clp(month.total)}</div><div className="small muted">{month.n} pedidos</div></div>
         <Link className="tile" href="/admin/pedidos?estado=por-despachar"><div className="label">Por despachar</div><div className="value">{counts.porDespachar}</div></Link>
         <Link className="tile" href="/admin/pedidos?estado=en_fabricacion"><div className="label">En fabricación</div><div className="value">{counts.fabricacion}</div></Link>

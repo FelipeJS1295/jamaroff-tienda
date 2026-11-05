@@ -1,3 +1,4 @@
+import { VisitTracker } from '@/components/visit-tracker';
 import './libro.css';
 
 // El catálogo digital va sin el header ni el pie de la tienda: es un libro a pantalla completa
@@ -8,6 +9,7 @@ export default function LibroLayout({ children }: { children: React.ReactNode })
       <link rel="preload" href="/fonts/hanken-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossOrigin="" />
       <link rel="preload" href="/fonts/cormorant-garamond-latin-wght-normal.woff2" as="font" type="font/woff2" crossOrigin="" />
       {children}
+      <VisitTracker />
     </>
   );
 }

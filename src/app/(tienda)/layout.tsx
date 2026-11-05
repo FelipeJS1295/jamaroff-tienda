@@ -1,3 +1,4 @@
+import { VisitTracker } from '@/components/visit-tracker';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import './shop.css';
@@ -14,6 +15,7 @@ export default function TiendaLayout({ children }: { children: React.ReactNode }
       <SiteHeader />
       <main id="contenido">{children}</main>
       <SiteFooter />
+      <VisitTracker />
     </div>
   );
 }
